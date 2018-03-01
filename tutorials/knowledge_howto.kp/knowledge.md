@@ -1,133 +1,191 @@
 ---
-title: Tutorial on how to post on Knowledge Repository
+title: Using Convolutional Autoencoder for Clustering (new title)
 authors:
 - tanelp
 tags:
-- knowledge
-- examples
-- howto
-created_at: 2018-02-28 00:00:00
-updated_at: 2018-02-28 20:08:15.097772
-tldr: This is short description of how to post information to the knowledge repository.
-  It will include some examples and
+- autoencoder
+- coffee-machine
+created_at: 2018-02-27 00:00:00
+updated_at: 2018-03-01 11:51:18.497931
+tldr: The goal of this notebook is to test whether it is possible to use encoder part
+  of autoencoder for clustering. The idea is to train an autoencoder, where the final
+  layer of encoder (and first layer of decoder), is a n-dimensional vector, where
+  n corresponds to number of clusters. The encoder could then be used for predicting
+  to which cluster the input image belongs to.
+The MNIST dataset is used in this case. The code is based on the following tutorial: https://blog.keras.io/building-autoencoders-in-keras.html.
+  The encoder was changed by flattening the (4, 4, 8) tensor (or layer) to a 128-dimensional
+  layer and then adding fully connected layer with 10 neurons (one for each MNIST
+  number).
+thumbnail: images/output_8_0.png
 ---
-*NOTE: template comments will be in italics*
+# Using Convolutional Autoencoder for clustering
+The goal of this notebook is to test whether it is possible to use encoder part of autoencoder for clustering. The idea is to train an autoencoder, where the final layer of encoder (and first layer of decoder), is a n-dimensional vector, where n corresponds to number of clusters. The encoder could then be used for predicting to which cluster the input image belongs to.
 
-*NOTE: for the title, optimize for **specificity**. Avoid high level concept
-style titles like "Instant Book Supply and Demand".* Instead, title around
-either:
- - *The takeaway from the entire post, at the exact level of specificity and
-granularity of the point the post shows, ie. 'Last Minute Cities by Overall SDI
-Index'*
- - *The question the blog is answering, with the takeaway immediately after, ie.
-'Is there any good supply left for last minute bookers?' followed by TL,DR:
-'Only 20% of LM searches have adequate supply compared to 60% outside of last
-minute'*
+The MNIST dataset is used in this case. The code is based on the following tutorial: https://blog.keras.io/building-autoencoders-in-keras.html. The encoder was changed by flattening the (4, 4, 8) tensor (or layer) to a 128-dimensional layer and then adding fully connected layer with 10 neurons (one for each MNIST number). 
 
-*NOTE: In the TL,DR, optimize for **clarity** and **comprehensiveness**. The
-goal is to convey the post with the least amount of friction, especially since
-ipython/beakers require much more scrolling than blog posts. Make the reader get
-a correct understanding of the post's takeaway, and the points supporting that
-takeaway without having to strain through paragraphs and tons of prose. Bullet
-points are great here, but are up to you. Try to avoid academic paper style
-abstracts.*
-
- - Having a specific title will help avoid having someone browse posts and only
-finding vague, similar sounding titles
- - Having an itemized, short, and clear tl,dr will help readers understand your
-content
- - Setting the reader's context with a motivation section makes someone
-understand how to judge your choices
- - Visualizations that can stand alone, via legends, labels, and captions are
-more understandable and powerful
- - We are not worrying about general text and prose design for now, but try to
-keep paragraphs short
-
-
-**Contents**
-
-[TOC]
-
-_NOTE: this will include a table of contents when rendered on the site._
-
-
-### Motivation:
-
-*NOTE: optimize in this section for **context setting**, as specifically as you
-can. For instance, this post is generally a set of standards for work in the
-repo. The specific motivation is to have least friction to current workflow
-while being able to painlessly aggregate it later.*
-
-The knowledge repo was created to consolidate work from across the A-team that
-is currently scattered in emails, blogposts, and keynotes, so that people didn't
-redo their work. For example, if one team member did a lot of interesting work
-on search intent, we want other A-teamers to find and use that work instead of
-reinventing the wheel by doing their own version of search intent. To reach that
-goal, there are two requirements:
-
- - A-team work needs to be in this repo
- - A-teamers need to be able to find work relevant to what they're doing, so
-they know if it's be done before
-
-In order to balance these goals, the editors have decided to optimize for least
-friction to people's current workflows in the short-term, while only requiring
-the amount of structure that will allow A-teamers to navigate and slice through
-the growing library of work.
-
-### This Section Says Exactly This Takeaway
 
 ```python
-    import numpy as np
-    
-    x = np.linspace(0, 3*np.pi, 500)
-    plot_data = dict()
-    plot_data["x"] = x
-    plot_data["y"] = np.sin(x**2)
-    
-    from ggplot import *
-    ggplot(aes(x='date', y='beef'), data=meat) + \
-            geom_point(color='lightblue') + \
-            stat_smooth(span=.15, color='black', se=True) + \
-            ggtitle("Put enough labeling in your graph to be understood on its own") + \
-            xlab("you definitely need axis labels") + \
-            ylab("both of them")
+import numpy as np
+np.random.seed(42)
+
+from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Flatten, Reshape
+from keras.models import Model
+from keras import backend as K
+
+input_img = Input(shape=(28, 28, 1))  # adapt this if using `channels_first` image data format
+
+x = Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+x = MaxPooling2D((2, 2), padding='same')(x)
+x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+x = MaxPooling2D((2, 2), padding='same')(x)
+x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+
+x = MaxPooling2D((2, 2), padding='same')(x)
+print(K.int_shape(x))
+x = Flatten()(x)
+print(K.int_shape(x))
+encoded = Dense(10, activation='relu')(x)
+
+
+x = Dense(128, activation='relu')(encoded)
+x = Reshape((4, 4, 8))(x)
+x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+x = UpSampling2D((2, 2))(x)
+x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+x = UpSampling2D((2, 2))(x)
+x = Conv2D(16, (3, 3), activation='relu')(x)
+x = UpSampling2D((2, 2))(x)
+decoded = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
+
+encoder = Model(input_img, encoded)
+autoencoder = Model(input_img, decoded)
+autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
+```
+    (None, 4, 4, 8)
+    (None, 128)
+
+
+
+```python
+from keras.datasets import mnist
+import numpy as np
+
+(x_train, _), (x_test, _) = mnist.load_data()
+
+x_train = x_train.astype('float32') / 255.
+x_test = x_test.astype('float32') / 255.
+x_train = np.reshape(x_train, (len(x_train), 28, 28, 1))  # adapt this if using `channels_first` image data format
+x_test = np.reshape(x_test, (len(x_test), 28, 28, 1))  # adapt this if using `channels_first` image data format
+```
+
+```python
+from keras.callbacks import TensorBoard
+
+autoencoder.fit(x_train, x_train,
+                epochs=2,
+                batch_size=128,
+                shuffle=True,
+                verbose=0,
+                validation_data=(x_test, x_test))
 ```
 
 
 
-    <ggplot: (280771265)>
+
+    <keras.callbacks.History at 0x7f610549f240>
 
 
 
-*NOTE: in graphs, optimize for being able to **stand alone**. As we aggregate
-and put things in keynote, we want to not have to recreate and add code to each
-plot to make it understandable without the entire post around it. When we
-compare this plot to other people's from other posts, will it be understandable
-without several paragraphs?*
+### Find class indexes
 
-### Putting Big Bold Headers with Clear Takeaways Will Help Us Aggregate Later
+We predict the activity of neurons in the last encoder layer for each training sample and for each sample find which neuron was the most active. We then find images which were clustered into the first cluster (predicted_classes==1). 
 
-At some point, once we have a decent nest egg of work from A-teamers, we are
-going to revisit the repo and try to aggregate the work into
-'collective_knowledge' work. Currently, people output work on a fairly ad-hoc,
-itemized basis, perhaps with several posts all related to a similar topic. After
-3-6 months, we want to put these points in conversation, to produce higher level
-conversations that may be more consumable across the company.
 
-The easier it is to know exactly what each section says, the faster it will be
-to parse through all the sections and focus on which slices of the post relate
-to a given conversation. Tags help, but I'd rather not have to read every single
-detail of every post tagged with 'search intent' to know exactly what relates to
-a later conversation.
+```python
+predicted_classes = np.argmax(encoder.predict(x_train), axis=1)
+class_indexes = [idx[0] for idx in np.argwhere(predicted_classes==1)]
+```
+### Visualize images from one predicted cluster
+Ten first images frome one cluster are then visualized. Ideally, being in one cluster, the following images should all be the same numbers.
 
-### Next Steps
 
-As we go forward with this work, we're eventually going to want to aggregate
-work and put posts in conversation. It's really helpful to have a communication
-chain when doing this. With this section, we can tell where the work ended with
-one person, and whether someone else's work can be linked.
+```python
+import matplotlib.pyplot as plt
+n = 10
+plt.figure(figsize=(20, 4))
+j = 1
+for i in class_indexes[:10]:
+    # display original
+    ax = plt.subplot(2, n, j)
+    plt.imshow(x_test[i].reshape(28, 28))
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    j += 1
 
-### Appendix
+    # display reconstruction
+#     ax = plt.subplot(2, n, j + n)
+#     plt.imshow(decoded_imgs[i].reshape(28, 28))
+#     plt.gray()
+#     ax.get_xaxis().set_visible(False)
+#     ax.get_yaxis().set_visible(False)
+plt.show()
+```
 
-Put all the stuff here that is not necessary for supporting the points above.
-Good place for documentation without distraction.
+
+![png](images/output_8_0.png)
+
+
+## Conclusion
+It seems that convolutional autoencoders by themselves are not very good at clustering images. It might be possible to use the encoder predictions as features for classical clustering algorithms, such as K-means.
+
+# Autoencoder + k-means
+
+
+```python
+from sklearn.cluster import KMeans
+import numpy as np
+X = encoder.predict(x_train)
+kmeans = KMeans(n_clusters=8, random_state=0).fit(X)
+kmeans.labels_
+
+#kmeans.predict([[0, 0], [4, 4]])
+
+#kmeans.cluster_centers_
+
+```
+
+
+
+
+    array([0, 6, 2, ..., 7, 5, 1], dtype=int32)
+
+
+
+
+```python
+class_indexes = [idx[0] for idx in np.argwhere(kmeans.labels_==2)]
+
+n = 8
+plt.figure(figsize=(20, 4))
+j = 1
+for i in class_indexes[:10]:
+    # display original
+    ax = plt.subplot(2, n, j)
+    plt.imshow(x_test[i].reshape(28, 28))
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    j += 1
+
+    # display reconstruction
+#     ax = plt.subplot(2, n, j + n)
+#     plt.imshow(decoded_imgs[i].reshape(28, 28))
+#     plt.gray()
+#     ax.get_xaxis().set_visible(False)
+#     ax.get_yaxis().set_visible(False)
+plt.show()
+```
+
+
+![png](images/output_12_0.png)
