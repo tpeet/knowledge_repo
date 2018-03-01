@@ -1,5 +1,5 @@
 ---
-title: This is a Knowledge Template Header
+title: This is a Knowledge Template Header (new)
 authors:
 - sally_smarts
 - wesley_wisdom
@@ -7,9 +7,8 @@ tags:
 - knowledge
 - example
 created_at: 2016-06-29 00:00:00
-updated_at: 2018-02-26 17:40:10.023685
+updated_at: 2018-03-01 12:40:21.948352
 tldr: This is short description of the content and findings of the post.
-thumbnail: images/output_5_1.png
 ---
 *NOTE: In the TL,DR, optimize for **clarity** and **comprehensiveness**. The goal is to convey the post with the least amount of friction, especially since ipython/beakers require much more scrolling than blog posts. Make the reader get a correct understanding of the post's takeaway, and the points supporting that takeaway without having to strain through paragraphs and tons of prose. Bullet points are great here, but are up to you. Try to avoid academic paper style abstracts.*
 
@@ -50,19 +49,6 @@ plt.title("Put enough labeling in your graph to be understood on its own", size=
 plt.xlabel('you definitely need axis labels', size=20)
 plt.ylabel('both of them', size=20)
 ```
-
-
-
-
-    <matplotlib.text.Text at 0x1119e1cd0>
-
-
-
-
-
-![png](images/output_5_1.png)
-
-
 *NOTE: in graphs, optimize for being able to **stand alone**. When aggregating and putting things in presentations, you won't have to recreate and add code to each plot to make it understandable without the entire post around it. Will it be understandable without several paragraphs?*
 
 ### Putting Big Bold Headers with Clear Takeaways Will Help Us Aggregate Later
